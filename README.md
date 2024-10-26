@@ -36,6 +36,6 @@ Many reactive libraries require downloading at least 16kB. comppact uses the Web
 </script>
 <!-- In body... -->
 <my-switch data-activate="true">
-  Hello world
+    Hello world
 </my-switch>
 ```

@@ -1,4 +1,4 @@
-# Web-**COM**ponent based **COM_PACT** re**ACT**ive library
+# Web-**COMP**onent based **COMP_ACT** re**ACT**ive library
 
 ## WHY??
 

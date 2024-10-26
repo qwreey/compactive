@@ -2,7 +2,7 @@
 
 ## WHY??
 
-Many reactive libraries require downloading at least 16kB. comppact uses the Web-Component to minimize the size, and hit 1.47kB (!!!)
+Many reactive libraries require downloading at least 16kB. comppact uses the Web-Component to minimize the size, and hit 1.43kB (!!!)
 
 ## Example
 

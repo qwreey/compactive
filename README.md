@@ -7,7 +7,7 @@ Many reactive libraries require downloading at least 16kB. comppact uses the Web
 ## Example
 
 ```html
-<!-- In head... you should embed comppact.js or comppact.min.js -->
+<!-- In head... you should embed compactive.js or compactive.min.js -->
 <template id="my-switch">
     <button id="btn"><slot></slot></button>
 <style>

@@ -1,0 +1,23 @@
+{
+  "name": "compactive",
+  "version": "1.0.0",
+  "description": "web-component based compact, reactive library",
+  "main": "compactive.min.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qwreey/compactive.git"
+  },
+  "keywords": [
+    "web-component",
+    "reactive"
+  ],
+  "author": "me@qwreey.moe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/qwreey/compactive/issues"
+  },
+  "homepage": "https://github.com/qwreey/compactive#readme"
+}

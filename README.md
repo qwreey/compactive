@@ -2,37 +2,36 @@
 
 ## WHY??
 
-Many reactive libraries require downloading at least 16kB. compactive uses the Web-Component to minimize the size, and hit 1.43kB (!!!)
+Many reactive libraries require downloading at least 16kB. compactive uses the Web-Component to minimize the size, and hit 1.78kB (!!!)
 
 ## Example
 
 ```html
 <!-- In head... you should embed compactive.js or compactive.min.js -->
-<template id="my-switch">
-    <button id="btn"><slot></slot></button>
-<style>
-    button.activate {
-        background-color: red;
-    }
-</style>
-</template>
 <script>
-    class MY_Switch extends BaseElement {
-        static { this
-            .init("my-switch")
-            .attr("activate")
-            .finalize()
-        }
-        constructor() {
-            super()
-            this.btn = this.shadowRoot.getElementById('btn')
-            this.btn.onclick = () => { this.activate = !this.activate }
-        }
-        activateAttr(val) {
-            if (val) this.btn.classList.add("activate")
-            else this.btn.classList.remove("activate")
-        }
+class MY_Switch extends BaseElement {
+    static { this
+        .init("my-switch")
+        .content(html`
+            <button -ref="btn"><slot></slot></button>
+        `)
+        .style(css`
+            button.activate {
+                background-color: red;
+            }
+        `)
+        .attr("activate")
+        .finalize()
     }
+    constructor() {
+        super()
+        this.btn.onclick = () => { this.activate = !this.activate }
+    }
+    activateAttr(val) {
+        if (val) this.btn.classList.add("activate")
+        else this.btn.classList.remove("activate")
+    }
+}
 </script>
 <!-- In body... -->
 <my-switch data-activate="true">

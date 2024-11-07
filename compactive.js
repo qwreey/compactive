@@ -14,6 +14,7 @@ const KtemplateContent = Kslots+1
 const Kattrs = Kslots+2
 const KtemplateStyle = Kslots+3
 const Kdata_ = "data-"
+const Khtml = "text/html"
 const NULL = null
 const contentParser = new DOMParser()
 const defaultShadowMode = { mode: 'open' }
@@ -47,11 +48,11 @@ const toAttr = (raw) => {
 }
 
 // Parse css/html to content
-w.html = (contents,...exps) => {
-    return contentParser[KparseFromString](contents.join(),"text/html")
+const html = w.html = (contents,...exps) => {
+    return contentParser[KparseFromString](contents.join(),Khtml)
 }
 w.css = (contents) => {
-    return contentParser[KparseFromString](`<style>${contents.join()}</style>`,"text/html")
+    return html(`<style>${contents.join()}</style>`)
 }
 
 // Class utility
@@ -66,17 +67,21 @@ w.BaseElement = class extends HTMLElement {
 
     constructor(newattrs) {
         super()
-        let slot,slotName,$=this,key
+        let slot,slotName,$=this,key,ref
 
         // Add shadow node
         $.attachShadow(defaultShadowMode)
             .append($.constructor[KtemplateContent].cloneNode(true))
 
+        for (ref of $[KshadowRoot][KquerySelectorAll]`[-ref]`) {
+            $[ref["-ref"]] = ref
+            delete ref["-ref"]
+        }
         $[Kslots] = {} // slots
         $[Kattrs] = {} // old attrs
 
         // Add slot change handler
-        for (slot of $[KshadowRoot][KquerySelectorAll]('slot')) {
+        for (slot of $[KshadowRoot][KquerySelectorAll]`slot`) {
             $[Kslots][slotName = slot.name || "default"] = slot
             let handle = $[slotName+"Slot"]
             if (handle) slot.onslotchange = e => handle.call($, slot[KassignedElements](), e)

@@ -1,46 +1,43 @@
 // const
-let w = window
-let REFS = w.REFS = {}
-let KassignedElements = "assignedElements"
-let KstartsWith = "startsWith"
-let KquerySelector = "querySelector"
-let KquerySelectorAll = KquerySelector+"All"
-let KshadowRoot = "shadowRoot"
-let KobservedAttributes = "observedAttributes"
-let Kslice = "slice"
-let Kslots = "%"
-let KtemplateContent = Kslots+1
-let Kattrs = Kslots+2
-let Kdata_ = "data-"
-let NULL = null
-let contentParser = new DOMParser()
-let defaultShadowMode = { mode: 'open' }
-
-// Class utility
-let IsInstance = w.IsInstance = (obj, constructor) => {
-    return Object.getPrototypeOf(obj)?.constructor == constructor
-}
+const w = window
+const REFS = w.REFS = {}
+const KassignedElements = "assignedElements"
+const KstartsWith = "startsWith"
+const KquerySelector = "querySelector"
+const KquerySelectorAll = KquerySelector+"All"
+const KshadowRoot = "shadowRoot"
+const KobservedAttributes = "observedAttributes"
+const KparseFromString = "parseFromString"
+const Kslice = "slice"
+const Kslots = "%"
+const KtemplateContent = Kslots+1
+const Kattrs = Kslots+2
+const KtemplateStyle = Kslots+3
+const Kdata_ = "data-"
+const NULL = null
+const contentParser = new DOMParser()
+const defaultShadowMode = { mode: 'open' }
 
 // Reference utilitys
-let CreateRefId = w.CreateRefId = _=>{
-    let id = "r:"+(Math.random()).toString(36)[Kslice](2)+(_??"");
-    return id in REFS ? CreateRefId(id) : id
+const ranbuf = new Uint8Array(12), CreateRefId = w.CreateRefId = ()=>{
+    crypto.getRandomValues(ranbuf)
+    return "r:"+ranbuf.toHex()
 }
 
 // parseAttr, toAttr
-let ty, data, parseAttr = (raw) => {
+const parseAttr = (raw) => {
     if (raw === NULL) return NULL
     if (raw == "true") return true
     if (raw == "false") return false
-    ty = raw.match(/^(.):/)?.[1]
+    let ty = raw.match(/^(.):/)?.[1],data
     if (ty == "r") return REFS[raw]
     data = raw[Kslice](2)
     if (ty == "s") return data
     if (ty == "e") return eval(data)
     if (ty == "i" || ty == "f") return +data
 }
-let refid, toAttr = (raw) => {
-    ty = typeof raw
+const toAttr = (raw) => {
+    let ty = typeof raw, refid
     if (raw === NULL) return ""
     if (ty == "string") return "s:"+raw
     if (ty == "number") return (Number.isInteger(raw) ? 'i:' : 'f:') + raw
@@ -49,14 +46,20 @@ let refid, toAttr = (raw) => {
     return refid
 }
 
-w.ClassFilter = (constructor) => {
-    return (e) => IsInstance(e, constructor)
+// Parse css/html to content
+w.html = (contents,...exps) => {
+    return contentParser[KparseFromString](contents.join(),"text/html")
 }
-w.CreateContent = (content) => {
-    return contentParser.parseFromString(content,"text/html")
+w.css = (contents) => {
+    return contentParser[KparseFromString](`<style>${contents.join()}</style>`,"text/html")
 }
 
-w.BaseElement = class BaseElement extends HTMLElement {
+// Class utility
+w.IsInstance = (obj, constructor) => {
+    return Object.getPrototypeOf(obj)?.constructor == constructor
+}
+
+w.BaseElement = class extends HTMLElement {
     // $ = this
     // $[slots] = slot list
     // $[attrs] = old attr values
@@ -75,7 +78,7 @@ w.BaseElement = class BaseElement extends HTMLElement {
         // Add slot change handler
         for (slot of $[KshadowRoot][KquerySelectorAll]('slot')) {
             $[Kslots][slotName = slot.name || "default"] = slot
-            let handle = $[`${slotName}Slot`]
+            let handle = $[slotName+"Slot"]
             if (handle) slot.onslotchange = e => handle.call($, slot[KassignedElements](), e)
         }
 
@@ -134,10 +137,16 @@ w.BaseElement = class BaseElement extends HTMLElement {
             // Define custom content
             content(content) {
                 $[KtemplateContent] = content
+                return elementUpdater
+            },
+            style(style) {
+                $[KtemplateStyle] = style
+                return elementUpdater
             },
             finalize() {
                 w.customElements.define(tag, $)
                 $[KtemplateContent] ??= document[KquerySelector](`template#${tag}`).content
+                if ($[KtemplateStyle]) $[KtemplateContent].append($[KtemplateStyle])
                 $.create = newattrs=>new $(newattrs)
             }
         }

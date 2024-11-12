@@ -2,7 +2,7 @@
 
 ## WHY??
 
-Many reactive libraries require downloading at least 16kB. compactive uses the Web-Component to minimize the size, and hit 1.78kB (!!!)
+Many reactive libraries require downloading at least 16kB. compactive uses the Web-Component to minimize the size, and hit 1.7kB (!!!)
 
 ## Example
 
@@ -10,8 +10,8 @@ Many reactive libraries require downloading at least 16kB. compactive uses the W
 <!-- In head... you should embed compactive.js or compactive.min.js -->
 <script>
 class MY_Switch extends BaseElement {
-    static { this
-        .init("my-switch")
+    static { Init(this,_=>_
+        .tag("my-switch")
         .content(html`
             <button -ref="btn"><slot></slot></button>
         `)
@@ -21,8 +21,7 @@ class MY_Switch extends BaseElement {
             }
         `)
         .attr("activate")
-        .finalize()
-    }
+    )}
     constructor() {
         super()
         this.btn.onclick = () => { this.activate = !this.activate }

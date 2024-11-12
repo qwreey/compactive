@@ -7,26 +7,24 @@ const KquerySelector = "querySelector"
 const KquerySelectorAll = KquerySelector+"All"
 const KshadowRoot = "shadowRoot"
 const KobservedAttributes = "observedAttributes"
-const KparseFromString = "parseFromString"
+const KgetAttribute = "getAttribute"
 const Kslice = "slice"
-const Kslots = "%"
-const KtemplateContent = Kslots+1
-const Kattrs = Kslots+2
-const KtemplateStyle = Kslots+3
+const Kslots = "%s"
+const KtemplateContent = "%t"
+const Kattrs = "%a"
+const KtemplateStyle = "%c"
 const Kdata_ = "data-"
-const Khtml = "text/html"
 const NULL = null
-const contentParser = new DOMParser()
 const defaultShadowMode = { mode: 'open' }
 
 // Reference utilitys
-const ranbuf = new Uint8Array(12), CreateRefId = w.CreateRefId = ()=>{
+const ranbuf = new Uint8Array(12), CreateRefId = ()=>{
     crypto.getRandomValues(ranbuf)
     return "r:"+ranbuf.toHex()
 }
 
 // parseAttr, toAttr
-const parseAttr = (raw) => {
+const parseAttr = w.parseAttr = (raw) => {
     if (raw === NULL) return NULL
     if (raw == "true") return true
     if (raw == "false") return false
@@ -37,7 +35,7 @@ const parseAttr = (raw) => {
     if (ty == "e") return eval(data)
     if (ty == "i" || ty == "f") return +data
 }
-const toAttr = (raw) => {
+const toAttr = w.toAttr = (raw) => {
     let ty = typeof raw, refid
     if (raw === NULL) return ""
     if (ty == "string") return "s:"+raw
@@ -48,16 +46,51 @@ const toAttr = (raw) => {
 }
 
 // Parse css/html to content
-const html = w.html = (contents,...exps) => {
-    return contentParser[KparseFromString](contents.join(),Khtml)
+const contentParser = new DOMParser(), html = w.html = (contents) => {
+    return contentParser.parseFromString(`<body>${contents.join()}</body>`,"text/html")
 }
 w.css = (contents) => {
-    return html(`<style>${contents.join()}</style>`)
+    return html([`<style>${contents.join()}</style>`])
 }
 
-// Class utility
-w.IsInstance = (obj, constructor) => {
-    return Object.getPrototypeOf(obj)?.constructor == constructor
+// Create new WebComponent
+w.Init=($,factory)=>{
+    let tag,name,elementUpdater = {
+        // Define custom attr
+        attr(...names) {
+            for (name of names) {
+                let key = Kdata_ + name
+                Object.defineProperty($.prototype, name, {
+                    get(){
+                        return parseAttr(this[KgetAttribute](key))
+                    },
+                    set(val){
+                        this.setAttribute(key, toAttr(val))
+                    }
+                });
+                $[KobservedAttributes].push(key)
+            }
+            return elementUpdater
+        },
+        tag(newtag) {
+            tag = newtag
+            return elementUpdater
+        },
+        // Define custom content
+        content(content) {
+            $[KtemplateContent] = content[KquerySelector]('body>*')
+            return elementUpdater
+        },
+        style(style) {
+            $[KtemplateStyle] = style[KquerySelector]('style')
+            return elementUpdater
+        },
+    }
+    $[KobservedAttributes] = []
+    factory(elementUpdater)
+    $[KtemplateContent] ??= document[KquerySelector]("template#"+tag).content
+    if ($[KtemplateStyle]) $[KtemplateContent].append($[KtemplateStyle])
+    w.customElements.define(tag, $)
 }
 
 w.BaseElement = class extends HTMLElement {
@@ -73,15 +106,14 @@ w.BaseElement = class extends HTMLElement {
         $.attachShadow(defaultShadowMode)
             .append($.constructor[KtemplateContent].cloneNode(true))
 
-        for (ref of $[KshadowRoot][KquerySelectorAll]`[-ref]`) {
-            $[ref["-ref"]] = ref
-            delete ref["-ref"]
+        for (ref of $[KshadowRoot][KquerySelectorAll]("[-ref]")) {
+            $[ref[KgetAttribute]("-ref")] = ref
         }
         $[Kslots] = {} // slots
         $[Kattrs] = {} // old attrs
 
         // Add slot change handler
-        for (slot of $[KshadowRoot][KquerySelectorAll]`slot`) {
+        for (slot of $[KshadowRoot][KquerySelectorAll]("slot")) {
             $[Kslots][slotName = slot.name || "default"] = slot
             let handle = $[slotName+"Slot"]
             if (handle) slot.onslotchange = e => handle.call($, slot[KassignedElements](), e)
@@ -105,7 +137,7 @@ w.BaseElement = class extends HTMLElement {
             value = parseAttr(raw)
 
             // Get attribute update handle / execute
-            handle = $[`${name}Attr`]
+            handle = $[name+"Attr"]
             if (handle) handle.call($, value, $[Kattrs][name])
 
             // Save as Old attribute value
@@ -119,43 +151,5 @@ w.BaseElement = class extends HTMLElement {
     // Emit custom event
     emit(name, data) {
         this.dispatchEvent(new CustomEvent(name, data))
-    }
-    // Create new WebComponent
-    static init(tag) {
-        let $=this,name,elementUpdater = {
-            // Define custom attr
-            attr(...names) {
-                for (name of names) {
-                    let key = Kdata_ + name
-                    Object.defineProperty($.prototype, name, {
-                        get: function(){
-                            return parseAttr(this.getAttribute(key))
-                        },
-                        set: function(val){
-                            this.setAttribute(key, toAttr(val))
-                        }
-                    });
-                    $[KobservedAttributes].push(key)
-                }
-                return elementUpdater
-            },
-            // Define custom content
-            content(content) {
-                $[KtemplateContent] = content
-                return elementUpdater
-            },
-            style(style) {
-                $[KtemplateStyle] = style
-                return elementUpdater
-            },
-            finalize() {
-                w.customElements.define(tag, $)
-                $[KtemplateContent] ??= document[KquerySelector](`template#${tag}`).content
-                if ($[KtemplateStyle]) $[KtemplateContent].append($[KtemplateStyle])
-                $.create = newattrs=>new $(newattrs)
-            }
-        }
-        $[KobservedAttributes] = []
-        return elementUpdater
     }
 }

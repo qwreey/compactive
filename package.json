@@ -1,6 +1,6 @@
 {
   "name": "compactive",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "web-component based compact, reactive library",
   "browser": "compactive.min.js",
   "files": [ "compactive.min.js" ],

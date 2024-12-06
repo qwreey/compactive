@@ -13,7 +13,10 @@ const Kslots = "%s"
 const KtemplateContent = "%t"
 const Kattrs = "%a"
 const KtemplateStyle = "%c"
+const Kinited = "%i"
 const Kdata_ = "data-"
+const KcloneNode = "cloneNode"
+const Kappend = "append"
 const NULL = null
 const defaultShadowMode = { mode: 'open' }
 
@@ -89,9 +92,11 @@ w.Init=($,factory)=>{
     $[KobservedAttributes] = []
     factory(elementUpdater)
     $[KtemplateContent] ??= document[KquerySelector]("template#"+tag).content
-    if ($[KtemplateStyle]) $[KtemplateContent].append($[KtemplateStyle])
+    if ($[KtemplateStyle]) $[KtemplateContent][Kappend]($[KtemplateStyle])
     w.customElements.define(tag, $)
 }
+let globalElement
+let overrideElement
 
 w.BaseElement = class extends HTMLElement {
     // $ = this
@@ -100,27 +105,35 @@ w.BaseElement = class extends HTMLElement {
 
     constructor(newattrs) {
         super()
-        let slot,slotName,$=this,key,ref
+        let item,firstElementChild,slotName,$=this,this_constructor=$.constructor,content=this_constructor[KtemplateContent]
+        if (!this_constructor[Kinited]) {
+            this_constructor[Kinited] = true
+            firstElementChild = content.firstElementChild
+            for (item of globalElement ??= document[KquerySelectorAll]("[-global]")) content.insertBefore(item[KcloneNode](true),firstElementChild)
+            for (item of overrideElement ??= document[KquerySelectorAll]("[-override]")) content[Kappend](item[KcloneNode](true))
+        }
 
         // Add shadow node
         $.attachShadow(defaultShadowMode)
-            .append($.constructor[KtemplateContent].cloneNode(true))
+            [Kappend](content[KcloneNode](true))
 
-        for (ref of $[KshadowRoot][KquerySelectorAll]("[-ref]")) {
-            $[ref[KgetAttribute]("-ref")] = ref
+        // Get -ref items
+        for (item of $[KshadowRoot][KquerySelectorAll]("[-ref]")) {
+            $[item[KgetAttribute]("-ref")] = item
         }
-        $[Kslots] = {} // slots
+
         $[Kattrs] = {} // old attrs
+        $[Kslots] = {} // slots
 
         // Add slot change handler
-        for (slot of $[KshadowRoot][KquerySelectorAll]("slot")) {
-            $[Kslots][slotName = slot.name || "default"] = slot
+        for (item of $[KshadowRoot][KquerySelectorAll]("slot")) {
+            $[Kslots][slotName = item.name || "default"] = item
             let handle = $[slotName+"Slot"]
-            if (handle) slot.onslotchange = e => handle.call($, slot[KassignedElements](), e)
+            if (handle) item.onslotchange = e => handle.call($, item[KassignedElements](), e)
         }
 
         // apply new attrs
-        if (newattrs) for (key in newattrs) $[key] = newattrs[key]
+        if (newattrs) for (item in newattrs) $[item] = newattrs[item]
     }
     attributeChangedCallback(name, old, raw) {
         let $=this,handle,value
